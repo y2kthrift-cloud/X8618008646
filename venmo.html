@@ -1,0 +1,3754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Venmo Clone 1.0</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Venmo Clone">
+<meta name="theme-color" content="#2f7df0">
+<meta name="msapplication-navbutton-color" content="#2f7df0">
+<style>
+  :root {
+    color-scheme: light;
+    --blue-main: #1f6ad6;
+    --blue-light: #2f7df0;
+    --blue-dark: #1554b6;
+    --text-primary: #000000;
+    --text-secondary: #666666;
+    --bg-main: #ffffff;
+    --card-bg: #ffffff;
+    --border-light: #e4e6eb;
+    --shadow-soft: 0 12px 24px rgba(17, 36, 86, 0.12);
+    font-family: "SF Pro Display","SF Pro Text","Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  }
+
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html, body {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background: var(--bg-main);
+    color: var(--text-primary);
+    -webkit-font-smoothing: antialiased;
+    touch-action: pan-y;
+    overflow: hidden;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body.app-loaded {
+    overflow-y: auto;
+  }
+
+  .app {
+    min-height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: calc(120px + env(safe-area-inset-bottom));
+  }
+
+  .page {
+    display: none;
+  }
+
+  .page.active {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  /* Startup Animation Styles */
+  .startup-page {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    background: linear-gradient(135deg, #ffffff 0%, #f8faff 50%, #ffffff 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: startupFadeOut 0.8s ease-in-out 3.5s forwards;
+  }
+
+  .startup-page.hidden {
+    display: none;
+  }
+
+  .logo-container {
+    position: relative;
+    margin-bottom: 40px;
+    animation: logoEntry 1.2s cubic-bezier(0.34, 1.56, 0.64, 1) 0.3s both;
+  }
+
+  .logo-image {
+    width: 120px;
+    height: 120px;
+    border-radius: 28px;
+    box-shadow: 0 20px 60px rgba(47, 125, 240, 0.5);
+    animation: horrorGlow 2s ease-in-out infinite alternate;
+    filter: contrast(1.2) brightness(0.8);
+  }
+
+  .logo-shine {
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border-radius: 30px;
+    background: linear-gradient(45deg, transparent, rgba(47, 125, 240, 0.3), transparent);
+    animation: logoShine 2.5s ease-in-out infinite;
+    opacity: 0;
+  }
+
+  .app-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: #2f7df0;
+    margin-bottom: 8px;
+    letter-spacing: -0.5px;
+    animation: titleSlideUp 1s cubic-bezier(0.34, 1.56, 0.64, 1) 0.8s both, textFlicker 3s infinite;
+    text-shadow: 0 0 10px rgba(47, 125, 240, 0.5);
+  }
+
+  .app-version {
+    font-size: 16px;
+    font-weight: 500;
+    color: #2f7df0;
+    margin-bottom: 60px;
+    animation: versionFadeIn 0.8s ease-out 1.2s both;
+  }
+
+  .loading-dots {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 40px;
+    animation: loadingFadeIn 0.6s ease-out 1.8s both;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #2f7df0;
+    animation: dotPulse 1.4s ease-in-out infinite;
+  }
+
+  .dot:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .dot:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+
+  .watermark {
+    position: absolute;
+    bottom: 40px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #2f7df0;
+    opacity: 0.7;
+    animation: watermarkFadeIn 0.6s ease-out 2.2s both;
+  }
+
+  /* Horror Style Animations */
+  @keyframes horrorGlow {
+    0% { 
+      box-shadow: 0 20px 60px rgba(47, 125, 240, 0.3); 
+      filter: contrast(1.2) brightness(0.8);
+    }
+    100% { 
+      box-shadow: 0 25px 80px rgba(47, 125, 240, 0.7); 
+      filter: contrast(1.5) brightness(0.6);
+    }
+  }
+
+  @keyframes textFlicker {
+    0%, 100% { opacity: 1; }
+    95% { opacity: 1; }
+    96% { opacity: 0.8; }
+    97% { opacity: 1; }
+    98% { opacity: 0.9; }
+    99% { opacity: 1; }
+  }
+
+  /* Startup Animations */
+  @keyframes startupFadeOut {
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.05); pointer-events: none; }
+  }
+
+  @keyframes logoEntry {
+    0% { 
+      opacity: 0; 
+      transform: scale(0.5) translateY(30px) rotate(-5deg); 
+    }
+    100% { 
+      opacity: 1; 
+      transform: scale(1) translateY(0px) rotate(0deg); 
+    }
+  }
+
+  @keyframes logoShine {
+    0% { 
+      opacity: 0; 
+      transform: translateX(-100%) rotate(45deg); 
+    }
+    50% { 
+      opacity: 1; 
+    }
+    100% { 
+      opacity: 0; 
+      transform: translateX(100%) rotate(45deg); 
+    }
+  }
+
+  @keyframes titleSlideUp {
+    0% { 
+      opacity: 0; 
+      transform: translateY(30px); 
+    }
+    100% { 
+      opacity: 1; 
+      transform: translateY(0px); 
+    }
+  }
+
+  @keyframes versionFadeIn {
+    0% { 
+      opacity: 0; 
+      transform: translateY(20px); 
+    }
+    100% { 
+      opacity: 1; 
+      transform: translateY(0px); 
+    }
+  }
+
+  @keyframes loadingFadeIn {
+    0% { 
+      opacity: 0; 
+      transform: translateY(20px); 
+    }
+    100% { 
+      opacity: 1; 
+      transform: translateY(0px); 
+    }
+  }
+
+  @keyframes dotPulse {
+    0%, 100% { 
+      transform: scale(1); 
+      opacity: 0.7; 
+    }
+    50% { 
+      transform: scale(1.3); 
+      opacity: 1; 
+    }
+  }
+
+  @keyframes watermarkFadeIn {
+    0% { 
+      opacity: 0; 
+      transform: translateY(20px); 
+    }
+    100% { 
+      opacity: 0.7; 
+      transform: translateY(0px); 
+    }
+  }
+
+  /* Horror Home Screen Styles */
+  .horror-animation-container {
+    width: 100%;
+    height: calc(100vh - 50px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(255,255,255,0.8) 0%, rgba(248,250,255,0.8) 50%, rgba(255,255,255,0.8) 100%), url('https://pfst.cf2.poecdn.net/base/image/0978d60d7d0f79a1e8e83b4d74916b48f7972afbd9199e90c3a174822dde7a33?w=600&h=400');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .horror-content {
+    text-align: center;
+    z-index: 10;
+    position: relative;
+  }
+
+  .horror-title {
+    font-size: 42px;
+    font-weight: 700;
+    color: #2f7df0;
+    margin-bottom: 20px;
+    animation: titleGlow 3s ease-in-out infinite alternate, textShake 5s infinite;
+    text-shadow: 0 0 20px rgba(47, 125, 240, 0.8), 0 0 30px rgba(255, 255, 255, 0.8);
+    letter-spacing: 2px;
+  }
+
+  .horror-subtitle {
+    font-size: 18px;
+    color: #2f7df0;
+    margin-bottom: 40px;
+    animation: subtitleFade 4s ease-in-out infinite;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+  }
+
+  .horror-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0.1;
+  }
+
+  .floating-skull {
+    position: absolute;
+    font-size: 60px;
+    color: #2f7df0;
+    animation: float 6s ease-in-out infinite;
+    opacity: 0.3;
+  }
+
+  .skull-1 {
+    top: 20%;
+    left: 10%;
+    animation-delay: 0s;
+  }
+
+  .skull-2 {
+    top: 60%;
+    right: 15%;
+    animation-delay: -2s;
+  }
+
+  .skull-3 {
+    bottom: 30%;
+    left: 20%;
+    animation-delay: -4s;
+  }
+
+  .glitch-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 98px,
+      rgba(47, 125, 240, 0.03) 100px
+    );
+    animation: glitchScan 8s linear infinite;
+  }
+
+  @keyframes titleGlow {
+    0% { 
+      text-shadow: 0 0 20px rgba(47, 125, 240, 0.8), 0 0 30px rgba(255, 255, 255, 0.8); 
+      transform: scale(1);
+    }
+    100% { 
+      text-shadow: 0 0 30px rgba(47, 125, 240, 1), 0 0 40px rgba(47, 125, 240, 0.8), 0 0 50px rgba(255, 255, 255, 1); 
+      transform: scale(1.02);
+    }
+  }
+
+  @keyframes textShake {
+    0%, 90%, 100% { transform: translateX(0); }
+    91% { transform: translateX(-2px); }
+    92% { transform: translateX(2px); }
+    93% { transform: translateX(-1px); }
+    94% { transform: translateX(1px); }
+    95% { transform: translateX(0); }
+  }
+
+  @keyframes subtitleFade {
+    0%, 100% { opacity: 0.7; }
+    50% { opacity: 1; }
+  }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    33% { transform: translateY(-20px) rotate(5deg); }
+    66% { transform: translateY(10px) rotate(-3deg); }
+  }
+
+  @keyframes glitchScan {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* Main App Styles */
+  header.profile-header {
+    position: relative;
+    padding: 24px 20px 60px;
+    color: #fff;
+    overflow: visible;
+    isolation: isolate;
+  }
+
+  header.profile-header::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120%;
+    height: 110%;
+    background: linear-gradient(180deg, var(--blue-light) 0%, var(--blue-main) 48%, var(--blue-dark) 100%);
+    border-radius: 0 0 50% 50%;
+    z-index: -1;
+  }
+
+  .top-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 40px;
+  }
+
+  .name-block {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .display-name {
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: -0.2px;
+  }
+
+  .dropdown-icon {
+    font-size: 18px;
+    opacity: 0.85;
+  }
+
+  .icon-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .icon-button {
+    position: relative;
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: none;
+    background: #ffffff;
+    color: var(--blue-dark);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    box-shadow: 0 10px 24px rgba(15, 48, 118, 0.2);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .icon-button:active {
+    transform: scale(0.96);
+    box-shadow: 0 8px 20px rgba(15, 48, 118, 0.18);
+  }
+
+  .icon-button .badge {
+    position: absolute;
+    top: -4px;
+    right: -2px;
+    background: #e53935;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 6px;
+    border-radius: 999px;
+    box-shadow: 0 4px 10px rgba(229, 57, 53, 0.4);
+  }
+
+  .icon-button svg {
+    width: 22px;
+    height: 22px;
+    fill: currentColor;
+  }
+
+  .username-line {
+    margin-top: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0.85;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .avatar-wrapper {
+    position: absolute;
+    top: calc(100% - 48px);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: #fff;
+    padding: 4px;
+    box-shadow: 0 20px 36px rgba(17, 52, 122, 0.26);
+    z-index: 10;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+
+  .avatar-wrapper:hover {
+    transform: translateX(-50%) scale(1.05);
+  }
+
+  .avatar-inner {
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 30% 30%, #3b7ef5 0%, #0f3d9d 65%, #052b6d 100%);
+    border-radius: 50%;
+    position: relative;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+  }
+
+  .avatar-inner span {
+    display: inline-flex;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 59, 155, 0.9);
+    border-radius: 50%;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 22px;
+    font-weight: 700;
+    box-shadow: inset 0 6px 18px rgba(255, 255, 255, 0.18);
+  }
+
+  .avatar-qr {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    width: 28px;
+    height: 28px;
+    background: #fff;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    box-shadow: 0 10px 20px rgba(15, 55, 122, 0.2);
+  }
+
+  .avatar-qr svg {
+    width: 16px;
+    height: 16px;
+    fill: #13316d;
+  }
+
+  main {
+    flex: 1;
+    padding: 70px 20px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    touch-action: pan-y;
+  }
+
+  main::after {
+    content: "";
+    height: 1px;
+  }
+
+  .quick-actions {
+    display: grid;
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: 16px;
+  }
+
+  .quick-card {
+    background: var(--card-bg);
+    border-radius: 20px;
+    border: none;
+    padding: 16px 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 8px 20px rgba(17, 36, 86, 0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    min-height: 100px;
+  }
+
+  .quick-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 24px rgba(17, 36, 86, 0.08);
+  }
+
+  .quick-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    background: rgba(47,125,240,0.12);
+    display: grid;
+    place-items: center;
+  }
+
+  .quick-icon svg {
+    width: 24px;
+    height: 24px;
+    fill: var(--blue-main);
+  }
+
+  .quick-card span {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--blue-main);
+    text-align: center;
+  }
+
+  /* Loading spinner for Groups */
+  .loading-spinner {
+    width: 24px;
+    height: 24px;
+    border: 2px solid rgba(47,125,240,0.3);
+    border-top: 2px solid var(--blue-main);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 10px 0;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  .tab-switcher {
+    display: grid;
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    background: #eef1f8;
+    padding: 6px;
+    border-radius: 24px;
+    font-size: 17px;
+    font-weight: 600;
+    box-shadow: inset 0 2px 6px rgba(17, 36, 86, 0.08);
+  }
+
+  .tab-button {
+    text-align: center;
+    padding: 10px 14px;
+    border-radius: 18px;
+    color: #6b6f76;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .tab-button.active {
+    background: #fff;
+    color: var(--text-primary);
+    box-shadow: 0 10px 18px rgba(19, 35, 81, 0.14);
+  }
+
+  .balance-card {
+    background: var(--card-bg);
+    border-radius: 28px;
+    border: 1px solid rgba(208, 214, 224, 0.6);
+    padding: 20px 18px 22px;
+    box-shadow: var(--shadow-soft);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .balance-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .balance-left span:nth-child(1) {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .balance-value {
+    font-size: 36px;
+    font-weight: 700;
+    margin-top: 4px;
+    letter-spacing: -1px;
+  }
+
+  .balance-right {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .balance-right span {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .balance-right button {
+    border: none;
+    background: transparent;
+    color: #1f5fd1;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .balance-right button svg {
+    fill: currentColor;
+  }
+
+  .transfer-button {
+    height: 48px;
+    border-radius: 24px;
+    border: none;
+    background: linear-gradient(90deg, var(--blue-main) 0%, #3f8cff 100%);
+    color: #fff;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 16px 28px rgba(47, 126, 240, 0.36);
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+  }
+
+  .transfer-button:active {
+    transform: translateY(1px);
+    box-shadow: 0 10px 20px rgba(47, 126, 240, 0.28);
+  }
+
+  .balance-note {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-top: 1px solid var(--border-light);
+    padding-top: 14px;
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.35;
+  }
+
+  .balance-note .note-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 14px;
+    background: rgba(33,105,225,0.12);
+    display: grid;
+    place-items: center;
+  }
+
+  .balance-note .note-icon svg {
+    width: 20px;
+    height: 20px;
+    fill: var(--blue-main);
+  }
+
+  .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  .add-bank-section {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 20px;
+    border: 1px solid #e4e6eb;
+    border-radius: 24px;
+    background: #fafbfc;
+    width: fit-content;
+    margin-left: 0;
+    margin-right: auto;
+  }
+
+  .add-bank-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .add-bank-button {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: none;
+    background: #f0f2f5;
+    color: #8a8d93;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s ease, background 0.2s ease;
+    font-size: 28px;
+    font-weight: 300;
+    flex-shrink: 0;
+  }
+
+  .add-bank-button:hover {
+    transform: scale(1.05);
+    background: #e8eaed;
+  }
+
+  .add-bank-button:active {
+    transform: scale(0.98);
+  }
+
+  .add-bank-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--blue-main);
+    text-align: center;
+  }
+
+  /* Cards Page Styles */
+  .cards-main {
+    flex: 1;
+    padding: 12px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: #f8f9fa;
+  }
+
+  .cards-header {
+    padding: 8px 0 4px;
+  }
+
+  .cards-header h1 {
+    font-size: 20px;
+    font-weight: 400;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .venmo-card-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 12px;
+  }
+
+  .venmo-card {
+    width: 100%;
+    max-width: 380px;
+    background: #f0f2f5;
+    border-radius: 20px;
+    padding: 16px;
+    box-shadow: 0 8px 20px rgba(17, 36, 86, 0.08);
+    border: 1px solid #e4e6eb;
+  }
+
+  .card-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    height: 120px;
+  }
+
+  .card-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    flex: 2;
+  }
+
+  .balance-amount {
+    font-size: 28px;
+    font-weight: 400;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+    letter-spacing: -1px;
+  }
+
+  .balance-label {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin-bottom: auto;
+  }
+
+  .card-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .card-type {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .mastercard-logo {
+    display: flex;
+    align-items: center;
+    gap: -2px;
+    position: relative;
+  }
+
+  .circle {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+
+  .circle.red {
+    background: #eb001b;
+  }
+
+  .circle.yellow {
+    background: #f79e1b;
+    margin-left: -5px;
+  }
+
+  .card-number {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 1.5px;
+  }
+
+  .card-right {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-end;
+    height: 100%;
+    flex: 1;
+  }
+
+  .card-visual {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: flex-end;
+    height: calc(100% + 32px);
+    width: 100%;
+    background: #0572DD;
+    border-radius: 14px;
+    padding: 12px;
+    position: relative;
+    overflow: hidden;
+    margin: -16px -16px -16px 0;
+    padding-right: 16px;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    border-bottom-right-radius: 20px;
+    border-top-right-radius: 20px;
+    border-bottom-left-radius: 14px;
+    border-top-left-radius: 14px;
+  }
+
+  .chip-icon {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .chip {
+    width: 20px;
+    height: 15px;
+    background: #d4d4d4;
+    border-radius: 3px;
+    border: 1px solid #999;
+    position: relative;
+  }
+
+  .chip::before {
+    content: '';
+    position: absolute;
+    top: 1.5px;
+    left: 1.5px;
+    right: 1.5px;
+    bottom: 1.5px;
+    background: #f0f0f0;
+    border-radius: 1.5px;
+  }
+
+  .venmo-brand {
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+    text-transform: lowercase;
+    letter-spacing: -0.5px;
+    position: absolute;
+    bottom: 78px;
+    right: 12px;
+  }
+
+  .edit-balance-btn {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.25);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(8px);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .edit-balance-btn:hover {
+    background: rgba(255, 255, 255, 0.35);
+    transform: scale(1.05);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  }
+
+  .edit-balance-btn:active {
+    transform: scale(0.95);
+  }
+
+  .edit-balance-btn svg {
+    width: 22px;
+    height: 22px;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+  }
+
+  .card-features {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: white;
+    border-radius: 16px;
+    padding: 18px;
+    box-shadow: 0 4px 16px rgba(17, 36, 86, 0.06);
+  }
+
+  .feature-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .feature-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(47, 125, 240, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .feature-icon svg {
+    width: 20px;
+    height: 20px;
+    stroke: var(--blue-main);
+  }
+
+  .feature-text h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 3px 0;
+  }
+
+  .feature-text p {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.3;
+  }
+
+  .apple-wallet-section {
+    display: flex;
+    justify-content: center;
+    margin-top: 4px;
+    padding: 0 20px;
+  }
+
+  .apple-wallet-button {
+    width: 100%;
+    max-width: 140px;
+    height: auto;
+    cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+
+  .apple-wallet-button:hover {
+    transform: scale(1.02);
+    opacity: 0.9;
+  }
+
+  .apple-wallet-button:active {
+    transform: scale(0.98);
+  }
+
+  /* Card Management Section Styles */
+  .card-management-section {
+    margin-top: 20px;
+  }
+
+  .management-options {
+    background: white;
+    border-radius: 16px;
+    padding: 8px 0;
+    box-shadow: 0 4px 16px rgba(17, 36, 86, 0.06);
+  }
+
+  .management-item {
+    display: flex;
+    align-items: center;
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .management-item:last-child {
+    border-bottom: none;
+  }
+
+  .management-item:hover {
+    background-color: rgba(47, 125, 240, 0.02);
+  }
+
+  .management-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: rgba(47, 125, 240, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 12px;
+    flex-shrink: 0;
+  }
+
+  .management-icon svg {
+    color: var(--blue-main);
+  }
+
+  .management-text {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .management-text h4 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 2px 0;
+  }
+
+  .management-text p {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
+  .management-arrow {
+    margin-left: 12px;
+    opacity: 0.6;
+  }
+
+  .management-arrow svg {
+    color: var(--text-secondary);
+  }
+
+  /* Card Benefits Section Styles */
+  .card-benefits-section {
+    margin-top: 20px;
+    margin-bottom: 40px;
+  }
+
+  .benefits-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 16px;
+  }
+
+  .benefit-card {
+    background: white;
+    border-radius: 16px;
+    padding: 20px 16px;
+    text-align: center;
+    box-shadow: 0 4px 16px rgba(17, 36, 86, 0.06);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .benefit-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(17, 36, 86, 0.08);
+  }
+
+  .benefit-icon {
+    font-size: 32px;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .benefit-card h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 8px 0;
+  }
+
+  .benefit-card p {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin: 0;
+    line-height: 1.4;
+  }
+
+  footer.navbar {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    height: auto;
+    z-index: 120;
+    padding: 0 env(safe-area-inset-left) env(safe-area-inset-bottom) env(safe-area-inset-right);
+    border-radius: 0 0 0 0;
+  }
+
+  .navbar-image {
+    width: 100%;
+    height: auto;
+    display: block;
+    object-fit: cover;
+  }
+
+  .nav-profile-overlay {
+    position: absolute;
+    right: calc(5.4% + env(safe-area-inset-right));
+    bottom: calc(39.2% + env(safe-area-inset-bottom));
+    width: 27px;
+    height: 27px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #3b7ef5 0%, #0f3d9d 65%, #052b6d 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    z-index: 121;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .nav-me-text {
+    position: absolute;
+    right: calc(6.3% + env(safe-area-inset-right));
+    bottom: calc(19.7% + env(safe-area-inset-bottom));
+    color: #214ca3;
+    font-size: 14px;
+    font-weight: bold;
+    z-index: 121;
+    pointer-events: none;
+  }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(22, 38, 70, 0.48);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    z-index: 200;
+  }
+
+  .modal-overlay.active {
+    display: flex;
+  }
+
+  .modal {
+    background: #fff;
+    border-radius: 26px;
+    padding: 32px 26px 28px;
+    width: min(420px, 100%);
+    box-shadow: 0 28px 48px rgba(12, 30, 68, 0.24);
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .modal header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .modal-title {
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  .modal-close {
+    border: none;
+    background: transparent;
+    font-size: 24px;
+    cursor: pointer;
+    color: #495366;
+  }
+
+  .modal form {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .form-group label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  .form-group input {
+    border-radius: 16px;
+    border: 1px solid var(--border-light);
+    padding: 12px 14px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    background: #f9fafc;
+    transition: border 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .form-group input:focus {
+    outline: none;
+    border-color: var(--blue-main);
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(47, 125, 240, 0.14);
+  }
+
+  .modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 10px;
+  }
+
+  .btn {
+    flex: 1;
+    border-radius: 20px;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .btn.secondary {
+    background: #eef2fb;
+    color: var(--blue-main);
+  }
+
+  .btn.primary {
+    background: var(--blue-main);
+    color: #fff;
+    box-shadow: 0 12px 26px rgba(31, 105, 214, 0.3);
+  }
+
+  .btn:active {
+    transform: translateY(1px);
+  }
+
+  /* Crypto Page Styles */
+  .crypto-main {
+    flex: 1;
+    padding: 16px 20px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .crypto-warning {
+    background: #e8f1fd;
+    border-radius: 16px;
+    padding: 16px 18px;
+    font-size: 15px;
+    font-weight: 500;
+    color: #2c5282;
+    line-height: 1.4;
+  }
+
+  .crypto-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .crypto-header h1 {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .crypto-settings {
+    width: 40px;
+    height: 40px;
+  }
+
+  .crypto-balance-section h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 8px 0;
+  }
+
+  .crypto-balance {
+    font-size: 36px;
+    font-weight: 400;
+    color: var(--text-primary);
+    margin: 0 0 20px 0;
+    letter-spacing: -1px;
+  }
+
+  .crypto-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .crypto-btn {
+    height: 52px;
+    border-radius: 26px;
+    border: none;
+    font-size: 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.16s ease, box-shadow 0.16s ease;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .crypto-btn:active {
+    transform: translateY(1px);
+  }
+
+  .buy-btn, .receive-btn {
+    background: linear-gradient(90deg, var(--blue-main) 0%, #3f8cff 100%);
+    color: #fff;
+    box-shadow: 0 12px 24px rgba(47, 126, 240, 0.3);
+  }
+
+  .pyusd-section h3 {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 16px 0;
+  }
+
+  .pyusd-card {
+    background: var(--card-bg);
+    border-radius: 18px;
+    border: 1px solid var(--border-light);
+    padding: 14px;
+    box-shadow: 0 4px 12px rgba(17, 36, 86, 0.06);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .pyusd-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .pyusd-text {
+    flex: 1;
+  }
+
+  .pyusd-text h4 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 4px 0;
+  }
+
+  .pyusd-text p {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    line-height: 1.25;
+    margin: 0 0 10px 0;
+  }
+
+  .terms-link {
+    color: var(--blue-main);
+    font-weight: 600;
+  }
+
+  .pyusd-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .opt-in-btn {
+    background: linear-gradient(90deg, var(--blue-main) 0%, #3f8cff 100%);
+    color: #fff;
+    box-shadow: 0 4px 8px rgba(47, 126, 240, 0.25);
+    padding: 8px 16px;
+    font-size: 13px;
+    text-align: center;
+    height: 34px;
+    border-radius: 17px;
+  }
+
+  .learn-more-btn {
+    background: transparent;
+    color: var(--blue-main);
+    border: 2px solid var(--blue-main);
+    padding: 6px 14px;
+    font-size: 13px;
+    text-align: center;
+    height: 34px;
+    border-radius: 17px;
+  }
+
+  .pyusd-decoration {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 80px;
+  }
+
+  .pyusd-icon {
+    width: 72px;
+    height: 72px;
+    background-image: url('https://pfst.cf2.poecdn.net/base/image/5c40db5db5a2222e0eb22453c2dddae118975e745bc58a286d6b24aa7fa606c0?w=2000&h=2014');
+    background-size: cover;
+    background-position: center;
+    border-radius: 50%;
+    border: 10px solid #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  .decoration-elements {
+    position: absolute;
+    inset: 0;
+  }
+
+  .star {
+    position: absolute;
+    top: -5px;
+    right: 10px;
+    font-size: 16px;
+    animation: coinBounce 2.5s ease-in-out infinite;
+  }
+
+  .coin {
+    position: absolute;
+    font-size: 18px;
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .coin-1 {
+    top: 15px;
+    left: -10px;
+    animation: coinSpin 4s ease-in-out infinite;
+    animation-delay: -1s;
+  }
+
+  .coin-2 {
+    bottom: 10px;
+    right: -5px;
+    animation: coinFloat 3.5s ease-in-out infinite;
+    animation-delay: -2s;
+  }
+
+  .sparkle {
+    position: absolute;
+    bottom: -5px;
+    left: 15px;
+    font-size: 14px;
+    animation: coinWiggle 2s ease-in-out infinite;
+    animation-delay: -0.5s;
+  }
+
+  @keyframes coinBounce {
+    0%, 100% { 
+      opacity: 0.8; 
+      transform: translateY(0px) scale(1) rotate(0deg); 
+    }
+    25% { 
+      opacity: 1; 
+      transform: translateY(-15px) scale(1.1) rotate(90deg); 
+    }
+    50% { 
+      opacity: 0.9; 
+      transform: translateY(-25px) scale(1.2) rotate(180deg); 
+    }
+    75% { 
+      opacity: 1; 
+      transform: translateY(-10px) scale(1.05) rotate(270deg); 
+    }
+  }
+
+  @keyframes coinSpin {
+    0%, 100% { 
+      transform: translateY(0px) rotate(0deg) scale(1); 
+    }
+    25% { 
+      transform: translateY(-20px) rotate(180deg) scale(1.1); 
+    }
+    50% { 
+      transform: translateY(-30px) rotate(360deg) scale(1.2); 
+    }
+    75% { 
+      transform: translateY(-15px) rotate(540deg) scale(1.05); 
+    }
+  }
+
+  @keyframes coinFloat {
+    0%, 100% { 
+      transform: translateY(0px) translateX(0px) rotate(0deg); 
+      opacity: 0.9;
+    }
+    33% { 
+      transform: translateY(-25px) translateX(10px) rotate(120deg); 
+      opacity: 1;
+    }
+    66% { 
+      transform: translateY(15px) translateX(-5px) rotate(240deg); 
+      opacity: 0.8;
+    }
+  }
+
+  @keyframes coinWiggle {
+    0%, 100% { 
+      transform: translateY(0px) rotate(0deg) scale(1); 
+      opacity: 0.7;
+    }
+    20% { 
+      transform: translateY(-8px) rotate(15deg) scale(1.1); 
+      opacity: 1;
+    }
+    40% { 
+      transform: translateY(-15px) rotate(-10deg) scale(1.15); 
+      opacity: 0.9;
+    }
+    60% { 
+      transform: translateY(-5px) rotate(20deg) scale(1.05); 
+      opacity: 1;
+    }
+    80% { 
+      transform: translateY(-12px) rotate(-5deg) scale(1.08); 
+      opacity: 0.85;
+    }
+  }
+
+  @keyframes twinkle {
+    0%, 100% { opacity: 0.7; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.1); }
+  }
+
+  /* Explore Crypto Section */
+  .explore-crypto h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 16px 0;
+  }
+
+  .crypto-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .crypto-item {
+    display: flex;
+    align-items: center;
+    padding: 16px 0;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+  }
+
+  .crypto-item:last-child {
+    border-bottom: none;
+  }
+
+  .crypto-item:hover {
+    background-color: rgba(31, 106, 214, 0.02);
+  }
+
+  .crypto-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    margin-right: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .crypto-icon.paypal { background: #1a1a1a; }
+  .crypto-icon.bitcoin { background: #f7931a; }
+  .crypto-icon.ethereum { background: #627eea; }
+  .crypto-icon.solana { background: linear-gradient(135deg, #9945ff 0%, #14f195 100%); }
+  .crypto-icon.chainlink { background: #375bd2; }
+  .crypto-icon.litecoin { background: #bfbbbb; }
+  .crypto-icon.bitcoin-cash { background: #8dc351; }
+
+  .crypto-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .crypto-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 2px 0;
+  }
+
+  .crypto-symbol {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
+  .crypto-price-info {
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .crypto-price {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 2px 0;
+  }
+
+  .crypto-change {
+    font-size: 14px;
+    font-weight: 500;
+    margin: 0;
+  }
+
+  .crypto-change.positive {
+    color: #10b981;
+  }
+
+  .crypto-change.negative {
+    color: #ef4444;
+  }
+
+  /* Celsius Partnership Section */
+  .celsius-section {
+    margin-top: 20px;
+  }
+
+  .celsius-banner {
+    background: #f8f9fa;
+    border-radius: 24px;
+    border: 1px solid #e5e7eb;
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 16px;
+  }
+
+  .celsius-logos {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .venmo-logo {
+    font-size: 28px;
+    font-weight: 700;
+    color: #3d95ce;
+  }
+
+  .divider {
+    font-size: 20px;
+    color: #6b7280;
+  }
+
+  .celsius-logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .celsius-icon {
+    width: 32px;
+    height: 32px;
+    background: #6d4aff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .celsius-text {
+    font-size: 24px;
+    font-weight: 600;
+    color: #8b5cf6;
+  }
+
+  .celsius-description {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+    line-height: 1.4;
+  }
+
+  .redeem-button {
+    background: #fff;
+    border: 2px solid var(--blue-main);
+    border-radius: 24px;
+    padding: 12px 32px;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--blue-main);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .redeem-button:hover {
+    background: var(--blue-main);
+    color: #fff;
+  }
+
+  /* Learn as you go section */
+  .learn-section h3 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 16px 0;
+  }
+
+  .learn-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+  }
+
+  .learn-card {
+    background: linear-gradient(135deg, #4285f4 0%, #3367d6 100%);
+    border-radius: 20px;
+    padding: 20px;
+    color: white;
+    position: relative;
+    min-height: 140px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+    overflow: hidden;
+  }
+
+  .learn-card:hover {
+    transform: translateY(-2px);
+  }
+
+  .learn-card-content {
+    position: relative;
+    z-index: 2;
+  }
+
+  .learn-card h4 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    line-height: 1.2;
+  }
+
+  .play-button {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    cursor: pointer;
+    z-index: 3;
+  }
+
+  .play-button svg {
+    width: 16px;
+    height: 16px;
+    fill: white;
+    margin-left: 2px;
+  }
+
+  /* Learn image styles */
+  .learn-image {
+    margin-top: 20px;
+  }
+
+  .learn-image img {
+    width: 110%;
+    height: auto;
+    display: block;
+    margin-left: -5%;
+  }
+
+  /* Crypto disclaimer styles */
+  .crypto-disclaimer {
+    margin-top: 20px;
+    padding: 16px;
+  }
+
+  .crypto-disclaimer p {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    margin: 0 0 12px 0;
+  }
+
+  .crypto-disclaimer p:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Coming Soon Page Styles */
+  .coming-soon-container {
+    width: 100%;
+    min-height: calc(100vh - 120px);
+    background: linear-gradient(135deg, #ffffff 0%, #f8faff 50%, #ffffff 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .coming-soon-content {
+    text-align: center;
+    max-width: 350px;
+    width: 100%;
+    z-index: 10;
+    position: relative;
+  }
+
+  .coming-soon-icon-container {
+    position: relative;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 80px;
+  }
+
+  .geometric-animation {
+    position: absolute;
+    width: 120px;
+    height: 120px;
+  }
+
+  .geometric-shape {
+    position: absolute;
+    background: var(--blue-main);
+    opacity: 0.3;
+    animation: geometricFloat 4s ease-in-out infinite;
+  }
+
+  .shape-1 {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    top: 20px;
+    left: 20px;
+    animation-delay: 0s;
+    transform-origin: center;
+  }
+
+  .shape-2 {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    top: 60px;
+    right: 15px;
+    animation-delay: -1s;
+    background: var(--blue-light);
+  }
+
+  .shape-3 {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    bottom: 25px;
+    left: 25px;
+    animation-delay: -2s;
+    background: var(--blue-dark);
+  }
+
+  .shape-4 {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    top: 10px;
+    right: 30px;
+    animation-delay: -1.5s;
+  }
+
+  .center-icon {
+    z-index: 5;
+    animation: pulseGlow 2s ease-in-out infinite alternate;
+  }
+
+  .coming-soon-title {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--blue-main);
+    margin-bottom: 6px;
+    animation: titleBounce 1s ease-out 0.5s both;
+  }
+
+  .coming-soon-subtitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 24px;
+    animation: subtitleSlide 1s ease-out 0.8s both;
+  }
+
+  .feature-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 24px;
+    animation: featuresSlide 1s ease-out 1.1s both;
+  }
+
+  .preview-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 16px;
+    background: rgba(47, 125, 240, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(47, 125, 240, 0.1);
+    transition: all 0.3s ease;
+  }
+
+  .preview-item:hover {
+    background: rgba(47, 125, 240, 0.1);
+    transform: translateX(4px);
+  }
+
+  .preview-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--blue-main);
+    color: white;
+    border-radius: 6px;
+    flex-shrink: 0;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .preview-item span {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .progress-bar-container {
+    margin-bottom: 24px;
+    animation: progressSlide 1s ease-out 1.4s both;
+  }
+
+  .progress-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+    text-align: left;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 6px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--blue-main) 0%, var(--blue-light) 100%);
+    border-radius: 3px;
+    width: 0%;
+    animation: progressFill 2s ease-out 2s forwards;
+    position: relative;
+  }
+
+  .progress-fill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: -10px;
+    width: 20px;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
+    animation: progressShine 1.5s ease-in-out infinite;
+  }
+
+  .progress-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--blue-main);
+    text-align: right;
+  }
+
+  .notification-signup {
+    animation: notificationSlide 1s ease-out 1.7s both;
+  }
+
+  .notification-signup p {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 12px;
+  }
+
+  .notification-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  #notifyToggle {
+    display: none;
+  }
+
+  .toggle-label {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: #e5e7eb;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+  }
+
+  .toggle-slider {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  #notifyToggle:checked + .toggle-label {
+    background: var(--blue-main);
+  }
+
+  #notifyToggle:checked + .toggle-label .toggle-slider {
+    transform: translateX(20px);
+  }
+
+  .toggle-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .wave-background {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .wave-line {
+    position: absolute;
+    width: 200%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--blue-main), transparent);
+    opacity: 0.1;
+    animation: waveMove 8s linear infinite;
+  }
+
+  .wave-1 {
+    top: 20%;
+    animation-delay: 0s;
+  }
+
+  .wave-2 {
+    top: 40%;
+    animation-delay: -2s;
+    background: linear-gradient(90deg, transparent, var(--blue-light), transparent);
+  }
+
+  .wave-3 {
+    top: 60%;
+    animation-delay: -4s;
+    background: linear-gradient(90deg, transparent, var(--blue-dark), transparent);
+  }
+
+  .wave-4 {
+    top: 80%;
+    animation-delay: -6s;
+    background: linear-gradient(90deg, transparent, var(--blue-main), transparent);
+  }
+
+  /* Coming Soon Animations */
+  @keyframes geometricFloat {
+    0%, 100% {
+      transform: translateY(0px) translateX(0px) rotate(0deg) scale(1);
+    }
+    25% {
+      transform: translateY(-15px) translateX(8px) rotate(45deg) scale(1.1);
+    }
+    50% {
+      transform: translateY(-20px) translateX(-5px) rotate(90deg) scale(0.9);
+    }
+    75% {
+      transform: translateY(-8px) translateX(12px) rotate(135deg) scale(1.05);
+    }
+  }
+
+  @keyframes pulseGlow {
+    0% {
+      filter: drop-shadow(0 0 10px rgba(47, 125, 240, 0.3));
+      transform: scale(1);
+    }
+    100% {
+      filter: drop-shadow(0 0 20px rgba(47, 125, 240, 0.6));
+      transform: scale(1.05);
+    }
+  }
+
+  @keyframes titleBounce {
+    0% {
+      opacity: 0;
+      transform: translateY(30px) scale(0.9);
+    }
+    60% {
+      transform: translateY(-5px) scale(1.02);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0px) scale(1);
+    }
+  }
+
+  @keyframes subtitleSlide {
+    0% {
+      opacity: 0;
+      transform: translateX(-30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0px);
+    }
+  }
+
+  @keyframes featuresSlide {
+    0% {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0px);
+    }
+  }
+
+  @keyframes progressSlide {
+    0% {
+      opacity: 0;
+      transform: translateX(30px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0px);
+    }
+  }
+
+  @keyframes notificationSlide {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0px);
+    }
+  }
+
+  @keyframes progressFill {
+    0% {
+      width: 0%;
+    }
+    100% {
+      width: 75%;
+    }
+  }
+
+  @keyframes progressShine {
+    0% {
+      transform: translateX(-20px);
+      opacity: 0;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      transform: translateX(20px);
+      opacity: 0;
+    }
+  }
+
+  @keyframes waveMove {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  /* Welcome Page Styles */
+  .welcome-image-container {
+    width: 100%;
+    height: calc(100vh - 50px);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .welcome-fullscreen-image {
+    width: 85%;
+    height: auto;
+    object-fit: contain;
+    object-position: center top;
+    margin-top: -30px;
+    max-height: 90vh;
+  }
+
+  @media (min-width: 768px) {
+    main {
+      padding-inline: max(24px, calc(50% - 210px));
+    }
+
+    header.profile-header {
+      padding-inline: max(24px, calc(50% - 210px));
+    }
+
+    .crypto-main {
+      padding-inline: max(24px, calc(50% - 210px));
+    }
+
+    .cards-main {
+      padding-inline: max(24px, calc(50% - 210px));
+    }
+
+    .welcome-header {
+      padding-inline: max(24px, calc(50% - 210px));
+    }
+
+    .welcome-main {
+      padding-inline: max(24px, calc(50% - 210px));
+    }
+
+    .welcome-title {
+      font-size: 32px;
+    }
+  }
+</style>
+</head>
+<body>
+<!-- Startup Animation Page -->
+<div class="startup-page" id="startupPage">
+  <div class="logo-container">
+    <div class="logo-shine"></div>
+    <img src="https://pfst.cf2.poecdn.net/base/image/14a64db3320358e5449d158dd6a1158eb1dddf1ecee5bc7b00196e5c5b812a14?w=1024&h=1024" alt="Venmo Clone Logo" class="logo-image">
+  </div>
+  
+  <h1 class="app-title">Venmo 1.0</h1>
+  <p class="app-version">by @W1nR4r on telegram</p>
+  
+  <div class="loading-dots">
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+  </div>
+  
+  <div class="watermark">Made By W1nR4r</div>
+</div>
+
+<div class="app">
+  <!-- Home Welcome Page -->
+  <div id="homePage" class="page active">
+    <div class="horror-animation-container">
+      <div class="horror-background">
+        <div class="floating-skull skull-1">⚡</div>
+        <div class="floating-skull skull-2">🔥</div>
+        <div class="floating-skull skull-3">✨</div>
+        <div class="glitch-overlay"></div>
+      </div>
+      <div class="horror-content">
+        <h1 class="horror-title">VENMO 1.0</h1>
+        <p class="horror-subtitle">by @W1nR4r on telegram</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cards Page -->
+  <div id="cardsPage" class="page">
+    <main class="cards-main">
+      <div class="cards-header">
+        <h1>Venmo Cards</h1>
+      </div>
+      
+      <div class="venmo-card-container">
+        <div class="venmo-card">
+          <div class="card-content">
+            <div class="card-left">
+              <div class="balance-amount" id="cardBalanceValue">$0</div>
+              <div class="balance-label">Venmo Balance</div>
+              
+              <div class="card-info">
+                <div class="card-type">
+                  <div class="card-logo">
+                    <div class="mastercard-logo">
+                      <div class="circle red"></div>
+                      <div class="circle yellow"></div>
+                    </div>
+                  </div>
+                  <span>Debit</span>
+                </div>
+                <div class="card-number" id="cardNumberDisplay">•••• 1543</div>
+              </div>
+            </div>
+            
+            <div class="card-right">
+              <div class="card-visual">
+
+                <div class="venmo-brand">venmo</div>
+                <button class="edit-balance-btn" id="cardEditBtn" type="button">
+                  <svg viewBox="0 0 24 24" width="22" height="22">
+                    <path d="M5 12h14m-7-7l7 7-7 7" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="apple-wallet-section">
+        <img src="https://pfst.cf2.poecdn.net/base/image/b604cac18ef71e265b8c8a57d20ff0bd5f0e8f48d316d84feee1ca7811037ac5?w=1200&h=371" alt="Add to Apple Wallet" class="apple-wallet-button">
+      </div>
+      
+      <div class="card-features">
+        <div class="feature-item">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" width="24" height="24">
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke="currentColor" stroke-width="2" fill="none"/>
+              <circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2" fill="none"/>
+            </svg>
+          </div>
+          <div class="feature-text">
+            <h3>No monthly fees</h3>
+            <p>Use your Venmo Debit Card with no monthly maintenance fees</p>
+          </div>
+        </div>
+        
+        <div class="feature-item">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" width="24" height="24">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" stroke="currentColor" stroke-width="2" fill="none"/>
+            </svg>
+          </div>
+          <div class="feature-text">
+            <h3>Cashback rewards</h3>
+            <p>Get cash back when you use your card at eligible merchants</p>
+          </div>
+        </div>
+        
+        <div class="feature-item">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" width="24" height="24">
+              <path d="M12 1l8.5 3v6.5c0 5.5-3.5 10.5-8.5 13-5-2.5-8.5-7.5-8.5-13V4L12 1z" stroke="currentColor" stroke-width="2" fill="none"/>
+              <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" fill="none"/>
+            </svg>
+          </div>
+          <div class="feature-text">
+            <h3>Security features</h3>
+            <p>Your card comes with advanced security and fraud protection</p>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" width="24" height="24">
+              <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" fill="none"/>
+              <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
+            </svg>
+          </div>
+          <div class="feature-text">
+            <h3>Instant notifications</h3>
+            <p>Get real-time alerts for all transactions and account activity</p>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" width="24" height="24">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" stroke="currentColor" stroke-width="2" fill="none"/>
+              <circle cx="12" cy="16" r="1" stroke="currentColor" stroke-width="2" fill="currentColor"/>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="currentColor" stroke-width="2" fill="none"/>
+            </svg>
+          </div>
+          <div class="feature-text">
+            <h3>Zero liability protection</h3>
+            <p>You're protected from unauthorized purchases on your card</p>
+          </div>
+        </div>
+
+        <div class="feature-item">
+          <div class="feature-icon">
+            <svg viewBox="0 0 24 24" width="24" height="24">
+              <path d="M21 12c0 1.2-4.03 6-9 6s-9-4.8-9-6c0-1.2 4.03-6 9-6s9 4.8 9 6z" stroke="currentColor" stroke-width="2" fill="none"/>
+              <path d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" stroke="currentColor" stroke-width="2" fill="none"/>
+            </svg>
+          </div>
+          <div class="feature-text">
+            <h3>Spending insights</h3>
+            <p>Track your spending patterns and manage your budget easily</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-management-section">
+        <h2 class="section-title">Card Management</h2>
+        <div class="management-options">
+          <div class="management-item">
+            <div class="management-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path d="M8 10v8l6-4-6-4z" fill="currentColor"/>
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2" fill="none"/>
+              </svg>
+            </div>
+            <div class="management-text">
+              <h4>Activate card</h4>
+              <p>Activate your new Venmo card</p>
+            </div>
+            <div class="management-arrow">
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" fill="none"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="management-item">
+            <div class="management-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path d="M12 1l8.5 3v6.5c0 5.5-3.5 10.5-8.5 13-5-2.5-8.5-7.5-8.5-13V4L12 1z" stroke="currentColor" stroke-width="2" fill="none"/>
+                <path d="M12 7v5l3 3" stroke="currentColor" stroke-width="2" fill="none"/>
+              </svg>
+            </div>
+            <div class="management-text">
+              <h4>Freeze card</h4>
+              <p>Temporarily disable your card</p>
+            </div>
+            <div class="management-arrow">
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" fill="none"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="management-item">
+            <div class="management-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" stroke="currentColor" stroke-width="2" fill="none"/>
+                <path d="M14 2v6h6" stroke="currentColor" stroke-width="2" fill="none"/>
+                <path d="M8 13h8" stroke="currentColor" stroke-width="2" fill="none"/>
+                <path d="M8 17h8" stroke="currentColor" stroke-width="2" fill="none"/>
+              </svg>
+            </div>
+            <div class="management-text">
+              <h4>View statements</h4>
+              <p>Download monthly statements</p>
+            </div>
+            <div class="management-arrow">
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" fill="none"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="management-item">
+            <div class="management-icon">
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path d="M12 2l8.5 3v6.5c0 5.5-3.5 10.5-8.5 13-5-2.5-8.5-7.5-8.5-13V4L12 1z" stroke="currentColor" stroke-width="2" fill="none"/>
+                <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" fill="none"/>
+              </svg>
+            </div>
+            <div class="management-text">
+              <h4>Change PIN</h4>
+              <p>Update your card PIN number</p>
+            </div>
+            <div class="management-arrow">
+              <svg viewBox="0 0 24 24" width="20" height="20">
+                <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" fill="none"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card-benefits-section">
+        <h2 class="section-title">Card Benefits</h2>
+        <div class="benefits-grid">
+          <div class="benefit-card">
+            <div class="benefit-icon">💰</div>
+            <h4>Cash Back</h4>
+            <p>Earn up to 3% cash back on eligible purchases</p>
+          </div>
+          <div class="benefit-card">
+            <div class="benefit-icon">🏪</div>
+            <h4>ATM Access</h4>
+            <p>Free withdrawals at 38,000+ MoneyPass ATMs nationwide</p>
+          </div>
+          <div class="benefit-card">
+            <div class="benefit-icon">📱</div>
+            <h4>Mobile Pay</h4>
+            <p>Works with Apple Pay, Google Pay, and Samsung Pay</p>
+          </div>
+          <div class="benefit-card">
+            <div class="benefit-icon">🌎</div>
+            <h4>Worldwide</h4>
+            <p>Use anywhere Mastercard is accepted globally</p>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Main Profile Page -->
+  <div id="mainPage" class="page">
+    <header class="profile-header">
+      <div class="top-row">
+        <div>
+          <div class="name-block">
+            <span class="display-name" id="displayName">Win rar</span>
+          </div>
+          <div class="username-line">@<span id="usernameText">W1nR4r</span></div>
+        </div>
+        <div class="icon-row">
+          <button class="icon-button" aria-label="Notifications">
+            <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9Z"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="badge">2</span>
+          </button>
+          <button class="icon-button" aria-label="Settings">
+            <svg viewBox="0 0 24 24"><path d="M19.14 12.936a7.973 7.973 0 0 0 .057-.936 7.973 7.973 0 0 0-.057-.936l2.034-1.59a.5.5 0 0 0 .12-.638l-1.927-3.338a.5.5 0 0 0-.607-.22l-2.4.96a8.06 8.06 0 0 0-1.62-.936l-.36-2.52A.5.5 0 0 0 13.9 2h-3.8a.5.5 0 0 0-.496.424l-.36 2.52a8.06 8.06 0 0 0-1.62.936l-2.4-.96a.5.5 0 0 0-.607.22L2.69 8.478a.5.5 0 0 0 .12.638l2.034 1.59a7.973 7.973 0 0 0-.057.936 7.973 7.973 0 0 0 .057.936l-2.034 1.59a.5.5 0 0 0-.12.638l1.927 3.338a.5.5 0 0 0 .607.22l2.4-.96a8.06 8.06 0 0 0 1.62.936l.36 2.52a.5.5 0 0 0 .496.424h3.8a.5.5 0 0 0 .496-.424l.36-2.52a8.06 8.06 0 0 0 1.62-.936l2.4.96a.5.5 0 0 0 .607-.22l1.927-3.338a.5.5 0 0 0-.12-.638l-2.034-1.59zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="avatar-wrapper">
+        <div class="avatar-inner">
+          <span></span>
+          <div class="avatar-qr">
+            <svg viewBox="0 0 24 24"><path d="M3 3h6v6H3V3zm2 2v2h2V5H5zM3 15h6v6H3v-6zm2 2v2h2v-2H5zM15 3h6v6h-6V3zm2 2v2h2V5h-2zM11 7h2v2h-2V7zM7 11h2v2H7v-2zM15 11h2v2h-2v-2zM11 15h2v2h-2v-2zM15 15h2v2h-2v-2zM19 15h2v2h-2v-2zM15 19h2v2h-2v-2zM19 19h2v2h-2v-2z"/></svg>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main>
+      <div class="quick-actions">
+        <div class="quick-card">
+          <div class="loading-spinner"></div>
+          <span>Groups</span>
+        </div>
+        <div class="quick-card">
+          <div class="quick-icon">
+            <svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0-4-4 4 4 0 0 0 4 4zm-7 8a7 7 0 1 1 14 0z"/></svg>
+          </div>
+          <span>No friends yet</span>
+        </div>
+      </div>
+
+      <div class="tab-switcher">
+        <div class="tab-button active">Wallet</div>
+        <div class="tab-button">Transactions</div>
+      </div>
+
+      <section class="balance-card">
+        <div class="balance-top">
+          <div class="balance-left">
+            <span>In Venmo</span>
+            <div class="balance-value" id="balanceValue">$0</div>
+          </div>
+          <div class="balance-right">
+            <span>Account &amp; Routing</span>
+          </div>
+        </div>
+        <button class="transfer-button" id="transferButton" type="button">Transfer</button>
+        <div class="balance-note">
+          <div class="note-icon">
+            <svg viewBox="0 0 24 24"><path d="M19 4H5a3 3 0 0 0-3 3v7a3 3 0 0 0 3 3h3v2.5A1.5 1.5 0 0 0 9.5 21h5a1.5 1.5 0 0 0 1.5-1.5V17h3a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3zm1 10a1 1 0 0 1-1 1h-4v4h-6v-4H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1z"/></svg>
+          </div>
+          <div>Use your balance now with Apple Pay—<br>in stores and online.</div>
+        </div>
+      </section>
+
+      <section>
+        <div class="section-title">Banks and cards</div>
+        <div class="add-bank-section">
+          <div class="add-bank-container">
+            <button class="add-bank-button" type="button">+</button>
+            <div class="add-bank-text">Add a bank<br>or card</div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Coming Soon Page -->
+  <div id="comingSoonPage" class="page">
+    <div class="coming-soon-container">
+      <div class="coming-soon-content">
+        <div class="coming-soon-icon-container">
+          <div class="geometric-animation">
+            <div class="geometric-shape shape-1"></div>
+            <div class="geometric-shape shape-2"></div>
+            <div class="geometric-shape shape-3"></div>
+            <div class="geometric-shape shape-4"></div>
+          </div>
+          <div class="center-icon">
+            <svg viewBox="0 0 24 24" width="60" height="60">
+              <circle cx="12" cy="12" r="10" fill="none" stroke="url(#gradientStroke)" stroke-width="2"/>
+              <path d="M12 8v8m4-4H8" stroke="url(#gradientStroke)" stroke-width="3" stroke-linecap="round"/>
+              <defs>
+                <linearGradient id="gradientStroke" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#2f7df0"/>
+                  <stop offset="100%" stop-color="#1f6ad6"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+        </div>
+        
+        <h1 class="coming-soon-title">Pay & Request</h1>
+        <h2 class="coming-soon-subtitle">Coming Soon</h2>
+        
+        <div class="feature-preview">
+          <div class="preview-item">
+            <div class="preview-icon">⚡</div>
+            <span>Instant payments</span>
+          </div>
+          <div class="preview-item">
+            <div class="preview-icon">🔒</div>
+            <span>Secure transfers</span>
+          </div>
+          <div class="preview-item">
+            <div class="preview-icon">📱</div>
+            <span>QR code scanning</span>
+          </div>
+        </div>
+        
+        <div class="progress-bar-container">
+          <div class="progress-label">Development Progress</div>
+          <div class="progress-bar">
+            <div class="progress-fill"></div>
+          </div>
+          <div class="progress-text">75% Complete</div>
+        </div>
+        
+        <div class="notification-signup">
+          <p>Get notified when it's ready!</p>
+          <div class="notification-toggle">
+            <input type="checkbox" id="notifyToggle" checked>
+            <label for="notifyToggle" class="toggle-label">
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="toggle-text">Notifications enabled</span>
+          </div>
+        </div>
+        
+        <div class="wave-background">
+          <div class="wave-line wave-1"></div>
+          <div class="wave-line wave-2"></div>
+          <div class="wave-line wave-3"></div>
+          <div class="wave-line wave-4"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Crypto Page -->
+  <div id="cryptoPage" class="page">
+    <main class="crypto-main">
+      <div class="crypto-warning">
+        Avoid crypto scams. Learn more about how to avoid scams in our Security Center.
+      </div>
+      
+      <div class="crypto-header">
+        <h1>Crypto</h1>
+        <button class="icon-button crypto-settings" aria-label="Crypto Settings">
+          <svg viewBox="0 0 24 24"><path d="M19.14 12.936a7.973 7.973 0 0 0 .057-.936 7.973 7.973 0 0 0-.057-.936l2.034-1.59a.5.5 0 0 0 .12-.638l-1.927-3.338a.5.5 0 0 0-.607-.22l-2.4.96a8.06 8.06 0 0 0-1.62-.936l-.36-2.52A.5.5 0 0 0 13.9 2h-3.8a.5.5 0 0 0-.496.424l-.36 2.52a8.06 8.06 0 0 0-1.62.936l-2.4-.96a.5.5 0 0 0-.607.22L2.69 8.478a.5.5 0 0 0 .12.638l2.034 1.59a7.973 7.973 0 0 0-.057.936 7.973 7.973 0 0 0 .057.936l-2.034 1.59a.5.5 0 0 0-.12.638l1.927 3.338a.5.5 0 0 0 .607.22l2.4-.96a8.06 8.06 0 0 0 1.62.936l.36 2.52a.5.5 0 0 0 .496.424h3.8a.5.5 0 0 0 .496-.424l.36-2.52a8.06 8.06 0 0 0 1.62-.936l2.4.96a.5.5 0 0 0 .607-.22l1.927-3.338a.5.5 0 0 0-.12-.638l-2.034-1.59zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z"/></svg>
+        </button>
+      </div>
+
+      <div class="crypto-balance-section">
+        <h2>Your crypto balance</h2>
+        <div class="crypto-balance" id="cryptoBalance">$0</div>
+        
+        <div class="crypto-actions">
+          <button class="crypto-btn buy-btn" id="buyBtn">Buy</button>
+          <button class="crypto-btn receive-btn">Receive</button>
+        </div>
+      </div>
+
+      <section class="pyusd-section">
+        <h3>PYUSD rewards</h3>
+        <div class="pyusd-card">
+          <div class="pyusd-content">
+            <div class="pyusd-text">
+              <h4>Get 4%* on your PYUSD</h4>
+              <p>Simply buy and hold PYUSD with Venmo. <span class="terms-link">Terms apply.</span> *Annual rate as of today.</p>
+              <div class="pyusd-actions">
+                <button class="crypto-btn opt-in-btn">Opt In</button>
+                <button class="crypto-btn learn-more-btn">Learn More</button>
+              </div>
+            </div>
+            <div class="pyusd-decoration">
+              <div class="pyusd-icon"></div>
+              <div class="decoration-elements">
+                <svg class="star" viewBox="0 0 24 24" width="16" height="16">
+                  <circle cx="12" cy="12" r="10" fill="url(#goldGradient)" stroke="#DAA520" stroke-width="1"/>
+                  <text x="12" y="16" text-anchor="middle" fill="#8B4513" font-size="10" font-weight="bold">$</text>
+                  <defs>
+                    <radialGradient id="goldGradient" cx="0.3" cy="0.3">
+                      <stop offset="0%" stop-color="#FFD700"/>
+                      <stop offset="70%" stop-color="#FFA500"/>
+                      <stop offset="100%" stop-color="#DAA520"/>
+                    </radialGradient>
+                  </defs>
+                </svg>
+                <svg class="coin coin-1" viewBox="0 0 24 24" width="18" height="18">
+                  <circle cx="12" cy="12" r="10" fill="url(#goldGradient2)" stroke="#DAA520" stroke-width="1"/>
+                  <text x="12" y="16" text-anchor="middle" fill="#8B4513" font-size="10" font-weight="bold">$</text>
+                  <defs>
+                    <radialGradient id="goldGradient2" cx="0.3" cy="0.3">
+                      <stop offset="0%" stop-color="#FFD700"/>
+                      <stop offset="70%" stop-color="#FFA500"/>
+                      <stop offset="100%" stop-color="#DAA520"/>
+                    </radialGradient>
+                  </defs>
+                </svg>
+                <svg class="coin coin-2" viewBox="0 0 24 24" width="18" height="18">
+                  <circle cx="12" cy="12" r="10" fill="url(#goldGradient3)" stroke="#DAA520" stroke-width="1"/>
+                  <text x="12" y="16" text-anchor="middle" fill="#8B4513" font-size="10" font-weight="bold">$</text>
+                  <defs>
+                    <radialGradient id="goldGradient3" cx="0.3" cy="0.3">
+                      <stop offset="0%" stop-color="#FFD700"/>
+                      <stop offset="70%" stop-color="#FFA500"/>
+                      <stop offset="100%" stop-color="#DAA520"/>
+                    </radialGradient>
+                  </defs>
+                </svg>
+                <svg class="sparkle" viewBox="0 0 24 24" width="14" height="14">
+                  <circle cx="12" cy="12" r="10" fill="url(#goldGradient4)" stroke="#DAA520" stroke-width="1"/>
+                  <text x="12" y="16" text-anchor="middle" fill="#8B4513" font-size="10" font-weight="bold">$</text>
+                  <defs>
+                    <radialGradient id="goldGradient4" cx="0.3" cy="0.3">
+                      <stop offset="0%" stop-color="#FFD700"/>
+                      <stop offset="70%" stop-color="#FFA500"/>
+                      <stop offset="100%" stop-color="#DAA520"/>
+                    </radialGradient>
+                  </defs>
+                </svg>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="explore-crypto">
+        <h3>Explore more crypto</h3>
+        <div class="crypto-list">
+          <div class="crypto-item" data-symbol="PYUSD">
+            <div class="crypto-icon paypal">P</div>
+            <div class="crypto-info">
+              <h4 class="crypto-name">PayPal USD</h4>
+              <p class="crypto-symbol">PYUSD</p>
+            </div>
+            <div class="crypto-price-info">
+              <p class="crypto-price">$1.00</p>
+              <p class="crypto-change positive">+ 0.00%</p>
+            </div>
+          </div>
+
+          <div class="crypto-item" data-symbol="BTC">
+            <div class="crypto-icon bitcoin">₿</div>
+            <div class="crypto-info">
+              <h4 class="crypto-name">Bitcoin</h4>
+              <p class="crypto-symbol">BTC</p>
+            </div>
+            <div class="crypto-price-info">
+              <p class="crypto-price">$122,694.63</p>
+              <p class="crypto-change negative">- 1.35%</p>
+            </div>
+          </div>
+
+          <div class="crypto-item" data-symbol="ETH">
+            <div class="crypto-icon ethereum">Ξ</div>
+            <div class="crypto-info">
+              <h4 class="crypto-name">Ethereum</h4>
+              <p class="crypto-symbol">ETH</p>
+            </div>
+            <div class="crypto-price-info">
+              <p class="crypto-price">$4,491.18</p>
+              <p class="crypto-change negative">- 4.28%</p>
+            </div>
+          </div>
+
+          <div class="crypto-item" data-symbol="SOL">
+            <div class="crypto-icon solana">S</div>
+            <div class="crypto-info">
+              <h4 class="crypto-name">Solana</h4>
+              <p class="crypto-symbol">SOL</p>
+            </div>
+            <div class="crypto-price-info">
+              <p class="crypto-price">$221.70</p>
+              <p class="crypto-change negative">- 4.12%</p>
+            </div>
+          </div>
+
+          <div class="crypto-item" data-symbol="LINK">
+            <div class="crypto-icon chainlink">⬡</div>
+            <div class="crypto-info">
+              <h4 class="crypto-name">Chainlink</h4>
+              <p class="crypto-symbol">LINK</p>
+            </div>
+            <div class="crypto-price-info">
+              <p class="crypto-price">$22.01</p>
+              <p class="crypto-change negative">- 3.12%</p>
+            </div>
+          </div>
+
+          <div class="crypto-item" data-symbol="LTC">
+            <div class="crypto-icon litecoin">Ł</div>
+            <div class="crypto-info">
+              <h4 class="crypto-name">Litecoin</h4>
+              <p class="crypto-symbol">LTC</p>
+            </div>
+            <div class="crypto-price-info">
+              <p class="crypto-price">$116.72</p>
+              <p class="crypto-change negative">- 1.09%</p>
+            </div>
+          </div>
+
+          <div class="crypto-item" data-symbol="BCH">
+            <div class="crypto-icon bitcoin-cash">₿</div>
+            <div class="crypto-info">
+              <h4 class="crypto-name">Bitcoin Cash</h4>
+              <p class="crypto-symbol">BCH</p>
+            </div>
+            <div class="crypto-price-info">
+              <p class="crypto-price">$579.88</p>
+              <p class="crypto-change negative">- 2.54%</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="celsius-section">
+        <div class="celsius-banner">
+          <div class="celsius-logos">
+            <span class="venmo-logo">venmo</span>
+            <span class="divider">|</span>
+            <div class="celsius-logo">
+              <div class="celsius-icon">C°</div>
+              <span class="celsius-text">Celsius</span>
+            </div>
+          </div>
+          <div class="celsius-description">
+            Have a Celsius claim code? You can redeem it here.
+          </div>
+          <button class="redeem-button">Redeem claim code</button>
+        </div>
+
+        <div class="learn-section">
+          <h3>Learn as you go</h3>
+          <div class="learn-cards">
+            <div class="learn-card">
+              <div class="learn-card-content">
+                <h4>Transfer Crypto on Venmo</h4>
+              </div>
+              <button class="play-button">
+                <svg viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </button>
+            </div>
+
+            <div class="learn-card">
+              <div class="learn-card-content">
+                <h4>How Crypto is Created</h4>
+              </div>
+              <button class="play-button">
+                <svg viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </button>
+            </div>
+
+            <div class="learn-card">
+              <div class="learn-card-content">
+                <h4>Explore Different Crypto</h4>
+              </div>
+              <button class="play-button">
+                <svg viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          
+          <div class="learn-image">
+            <img src="https://pfst.cf2.poecdn.net/base/image/4a1df934b01da5a11c8e8a9ac6d611941efc1128775c47b987706f553d699ad4?w=1732&h=2560" alt="Crypto learning resources" />
+          </div>
+          
+          <div class="crypto-disclaimer">
+            <p>Values shown are based on current exchange rates. Prices will differ when you buy or sell due to market changes and our fees.</p>
+            <p>Buying, selling, and holding cryptocurrencies is not regulated in many states, including California.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<footer class="navbar">
+  <img src="https://pfst.cf2.poecdn.net/base/image/08d6aa6762e5c95e22586683db261c29145b0f1c3d6739786ae3288c18fea770?w=2160&h=774" alt="Navigation Bar" class="navbar-image">
+  <div class="nav-profile-overlay" id="navProfileOverlay"></div>
+  <div class="nav-me-text">Me</div>
+</footer>
+
+<div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="modal" role="document">
+    <header>
+      <div class="modal-title">Edit Profile &amp; Settings</div>
+      <button class="modal-close" type="button" aria-label="Close">✕</button>
+    </header>
+    <form id="editForm">
+      <div class="form-group">
+        <label for="displayNameInput">Display Name</label>
+        <input id="displayNameInput" name="displayName" type="text" required maxlength="32">
+      </div>
+      <div class="form-group">
+        <label for="usernameInput">Username</label>
+        <input id="usernameInput" name="username" type="text" required maxlength="32">
+      </div>
+      <div class="form-group">
+        <label for="balanceInput">Balance Amount (numbers only)</label>
+        <input id="balanceInput" name="balance" type="number" step="0.01" min="0" required>
+      </div>
+      <div class="form-group">
+        <label for="notificationInput">Notification Badge Count (0 to hide)</label>
+        <input id="notificationInput" name="notification" type="number" min="0" max="99" placeholder="Enter number or 0 to hide">
+      </div>
+      <div class="modal-actions">
+        <button class="btn secondary" type="button" id="cancelButton">Cancel</button>
+        <button class="btn primary" type="submit">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Crypto Balance Edit Modal -->
+<div class="modal-overlay" id="cryptoModalOverlay" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="modal" role="document">
+    <header>
+      <div class="modal-title">Edit Crypto Balance</div>
+      <button class="modal-close" type="button" aria-label="Close" id="cryptoModalClose">✕</button>
+    </header>
+    <form id="cryptoEditForm">
+      <div class="form-group">
+        <label for="cryptoBalanceInput">Crypto Balance Amount (USD)</label>
+        <input id="cryptoBalanceInput" name="cryptoBalance" type="number" step="0.01" min="0" required>
+      </div>
+      <div class="modal-actions">
+        <button class="btn secondary" type="button" id="cryptoCancelButton">Cancel</button>
+        <button class="btn primary" type="submit">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Card Balance Edit Modal -->
+<div class="modal-overlay" id="cardModalOverlay" role="dialog" aria-modal="true" aria-hidden="true">
+  <div class="modal" role="document">
+    <header>
+      <div class="modal-title">Edit Card Details</div>
+      <button class="modal-close" type="button" aria-label="Close" id="cardModalClose">✕</button>
+    </header>
+    <form id="cardEditForm">
+      <div class="form-group">
+        <label for="cardBalanceInput">Venmo Balance Amount (USD)</label>
+        <input id="cardBalanceInput" name="cardBalance" type="number" step="0.01" min="0" required>
+      </div>
+      <div class="form-group">
+        <label for="cardDigitsInput">Last 4 Digits of Card</label>
+        <input id="cardDigitsInput" name="cardDigits" type="text" pattern="[0-9]{4}" maxlength="4" placeholder="1543" required>
+      </div>
+      <div class="modal-actions">
+        <button class="btn secondary" type="button" id="cardCancelButton">Cancel</button>
+        <button class="btn primary" type="submit">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<input type="file" id="profileImageInput" accept="image/*" style="display: none;">
+
+<script>
+  // Startup animation logic
+  setTimeout(() => {
+    const startupPage = document.getElementById('startupPage');
+    startupPage.classList.add('hidden');
+    
+    // Enable body overflow after startup
+    document.body.classList.add('app-loaded');
+  }, 4300); // Hide startup after 4.3 seconds
+
+  const transferButton = document.getElementById('transferButton');
+  const modalOverlay = document.getElementById('modalOverlay');
+  const modalClose = document.querySelector('.modal-close');
+  const cancelButton = document.getElementById('cancelButton');
+  const editForm = document.getElementById('editForm');
+
+  const displayNameEl = document.getElementById('displayName');
+  const usernameTextEl = document.getElementById('usernameText');
+  const balanceValueEl = document.getElementById('balanceValue');
+
+  const displayNameInput = document.getElementById('displayNameInput');
+  const usernameInput = document.getElementById('usernameInput');
+  const balanceInput = document.getElementById('balanceInput');
+  const notificationInput = document.getElementById('notificationInput');
+  const notificationBadge = document.querySelector('.badge');
+
+  // Crypto modal elements
+  const buyBtn = document.getElementById('buyBtn');
+  const cryptoModalOverlay = document.getElementById('cryptoModalOverlay');
+  const cryptoModalClose = document.getElementById('cryptoModalClose');
+  const cryptoCancelButton = document.getElementById('cryptoCancelButton');
+  const cryptoEditForm = document.getElementById('cryptoEditForm');
+  const cryptoBalanceEl = document.getElementById('cryptoBalance');
+  const cryptoBalanceInput = document.getElementById('cryptoBalanceInput');
+
+  // Card modal elements
+  const cardEditBtn = document.getElementById('cardEditBtn');
+  const cardModalOverlay = document.getElementById('cardModalOverlay');
+  const cardModalClose = document.getElementById('cardModalClose');
+  const cardCancelButton = document.getElementById('cardCancelButton');
+  const cardEditForm = document.getElementById('cardEditForm');
+  const cardBalanceEl = document.getElementById('cardBalanceValue');
+  const cardBalanceInput = document.getElementById('cardBalanceInput');
+  const cardDigitsInput = document.getElementById('cardDigitsInput');
+  const cardNumberDisplay = document.getElementById('cardNumberDisplay');
+
+  // Navigation profile overlay
+  const navProfileOverlay = document.getElementById('navProfileOverlay');
+
+  // Apple Wallet button functionality
+  const appleWalletButton = document.querySelector('.apple-wallet-button');
+  
+  appleWalletButton.addEventListener('click', () => {
+    // Try to open Apple Wallet app using URL scheme
+    const walletURL = 'shoebox://';
+    
+    // Create a temporary link to attempt opening the wallet
+    const link = document.createElement('a');
+    link.href = walletURL;
+    link.style.display = 'none';
+    document.body.appendChild(link);
+    
+    // Try to open the wallet app
+    try {
+      link.click();
+      
+      // If the app doesn't open within 1 second, try alternative URL
+      setTimeout(() => {
+        const altLink = document.createElement('a');
+        altLink.href = 'wallet://';
+        altLink.style.display = 'none';
+        document.body.appendChild(altLink);
+        altLink.click();
+        document.body.removeChild(altLink);
+      }, 1000);
+      
+    } catch (error) {
+      // If URL schemes fail, show a helpful message
+      console.log('Apple Wallet app not available or URL scheme not supported');
+    }
+    
+    document.body.removeChild(link);
+  });
+
+  // iOS Status Bar Color Management
+  function updateStatusBarForPage(pageId) {
+    const statusBarMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+    const themeColorMeta = document.querySelector('meta[name="theme-color"]');
+    const msNavButtonMeta = document.querySelector('meta[name="msapplication-navbutton-color"]');
+    
+    if (pageId === 'mainPage') {
+      // Keep blue status bar for profile page (mainPage)
+      statusBarMeta.setAttribute('content', 'default');
+      themeColorMeta.setAttribute('content', '#2f7df0');
+      msNavButtonMeta.setAttribute('content', '#2f7df0');
+    } else {
+      // Set white status bar for all other pages
+      statusBarMeta.setAttribute('content', 'light-content');
+      themeColorMeta.setAttribute('content', '#ffffff');
+      msNavButtonMeta.setAttribute('content', '#ffffff');
+    }
+  }
+
+  function openModal() {
+    displayNameInput.value = displayNameEl.textContent.trim();
+    usernameInput.value = usernameTextEl.textContent.trim();
+    const numericBalance = balanceValueEl.textContent.replace(/[^0-9.]/g, '') || '0';
+    balanceInput.value = parseFloat(numericBalance);
+    
+    // Set current notification badge value
+    const currentBadgeValue = notificationBadge ? notificationBadge.textContent.trim() : '0';
+    notificationInput.value = currentBadgeValue;
+    
+    modalOverlay.classList.add('active');
+    modalOverlay.setAttribute('aria-hidden', 'false');
+    displayNameInput.focus();
+  }
+
+  function closeModal() {
+    modalOverlay.classList.remove('active');
+    modalOverlay.setAttribute('aria-hidden', 'true');
+  }
+
+  function openCryptoModal() {
+    const numericBalance = cryptoBalanceEl.textContent.replace(/[^0-9.]/g, '') || '0';
+    cryptoBalanceInput.value = parseFloat(numericBalance);
+    
+    cryptoModalOverlay.classList.add('active');
+    cryptoModalOverlay.setAttribute('aria-hidden', 'false');
+    cryptoBalanceInput.focus();
+  }
+
+  function closeCryptoModal() {
+    cryptoModalOverlay.classList.remove('active');
+    cryptoModalOverlay.setAttribute('aria-hidden', 'true');
+  }
+
+  function openCardModal() {
+    const numericBalance = cardBalanceEl.textContent.replace(/[^0-9.]/g, '') || '0';
+    cardBalanceInput.value = parseFloat(numericBalance);
+    
+    // Get current last 4 digits from card display
+    const currentCardNumber = cardNumberDisplay.textContent.trim();
+    const lastFourDigits = currentCardNumber.replace('•••• ', '');
+    cardDigitsInput.value = lastFourDigits;
+    
+    cardModalOverlay.classList.add('active');
+    cardModalOverlay.setAttribute('aria-hidden', 'false');
+    cardBalanceInput.focus();
+  }
+
+  function closeCardModal() {
+    cardModalOverlay.classList.remove('active');
+    cardModalOverlay.setAttribute('aria-hidden', 'true');
+  }
+
+  transferButton.addEventListener('click', openModal);
+  modalClose.addEventListener('click', closeModal);
+  cancelButton.addEventListener('click', closeModal);
+
+  buyBtn.addEventListener('click', openCryptoModal);
+  cryptoModalClose.addEventListener('click', closeCryptoModal);
+  cryptoCancelButton.addEventListener('click', closeCryptoModal);
+
+  cardEditBtn.addEventListener('click', openCardModal);
+  cardModalClose.addEventListener('click', closeCardModal);
+  cardCancelButton.addEventListener('click', closeCardModal);
+
+  modalOverlay.addEventListener('click', (event) => {
+    if (event.target === modalOverlay) {
+      closeModal();
+    }
+  });
+
+  cryptoModalOverlay.addEventListener('click', (event) => {
+    if (event.target === cryptoModalOverlay) {
+      closeCryptoModal();
+    }
+  });
+
+  cardModalOverlay.addEventListener('click', (event) => {
+    if (event.target === cardModalOverlay) {
+      closeCardModal();
+    }
+  });
+
+  editForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const newDisplayName = displayNameInput.value.trim();
+    const newUsername = usernameInput.value.trim().replace(/^@+/, '');
+    const newBalance = parseFloat(balanceInput.value);
+
+    if (!newDisplayName || !newUsername || Number.isNaN(newBalance)) {
+      return;
+    }
+
+    displayNameEl.textContent = newDisplayName;
+    usernameTextEl.textContent = newUsername;
+    const formattedBalance = newBalance.toLocaleString(undefined, {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: newBalance % 1 === 0 ? 0 : 2,
+      maximumFractionDigits: 2
+    });
+    balanceValueEl.textContent = formattedBalance;
+
+    // Update profile initials in both places
+    updateProfileInitials(newDisplayName);
+    
+    // Update notification badge
+    const newNotificationCount = parseInt(notificationInput.value) || 0;
+    updateNotificationBadge(newNotificationCount);
+
+    // Save to localStorage
+    saveToLocalStorage();
+
+    closeModal();
+  });
+
+  cryptoEditForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const newCryptoBalance = parseFloat(cryptoBalanceInput.value);
+
+    if (Number.isNaN(newCryptoBalance)) {
+      return;
+    }
+
+    const formattedBalance = newCryptoBalance.toLocaleString(undefined, {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: newCryptoBalance % 1 === 0 ? 0 : 2,
+      maximumFractionDigits: 2
+    });
+    cryptoBalanceEl.textContent = formattedBalance;
+
+    // Save to localStorage
+    saveToLocalStorage();
+
+    closeCryptoModal();
+  });
+
+  cardEditForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const newCardBalance = parseFloat(cardBalanceInput.value);
+    const newCardDigits = cardDigitsInput.value.trim();
+
+    if (Number.isNaN(newCardBalance) || !/^\d{4}$/.test(newCardDigits)) {
+      return;
+    }
+
+    const formattedBalance = newCardBalance.toLocaleString(undefined, {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: newCardBalance % 1 === 0 ? 0 : 2,
+      maximumFractionDigits: 2
+    });
+    cardBalanceEl.textContent = formattedBalance;
+    cardNumberDisplay.textContent = `•••• ${newCardDigits}`;
+
+    // Save to localStorage
+    saveToLocalStorage();
+
+    closeCardModal();
+  });
+
+  // Profile picture functionality
+  const avatarWrapper = document.querySelector('.avatar-wrapper');
+  const profileImageInput = document.getElementById('profileImageInput');
+  const avatarInnerSpan = document.querySelector('.avatar-inner span');
+
+  function updateProfileInitials(name) {
+    const initials = name.split(' ').map(word => word.charAt(0)).join('').substring(0, 2).toUpperCase();
+    avatarInnerSpan.textContent = initials;
+    
+    // Update navigation profile overlay with initials when no image
+    if (!avatarInnerSpan.style.backgroundImage) {
+      navProfileOverlay.textContent = initials;
+      navProfileOverlay.style.backgroundImage = '';
+      navProfileOverlay.style.backgroundSize = '';
+      navProfileOverlay.style.backgroundPosition = '';
+    }
+  }
+
+  function updateNavigationProfile() {
+    // Copy the style from the main avatar to the navigation overlay
+    if (avatarInnerSpan.style.backgroundImage) {
+      navProfileOverlay.style.backgroundImage = avatarInnerSpan.style.backgroundImage;
+      navProfileOverlay.style.backgroundSize = 'cover';
+      navProfileOverlay.style.backgroundPosition = 'center';
+      navProfileOverlay.textContent = '';
+    } else {
+      // If no image, show initials
+      navProfileOverlay.textContent = avatarInnerSpan.textContent;
+      navProfileOverlay.style.backgroundImage = '';
+      navProfileOverlay.style.backgroundSize = '';
+      navProfileOverlay.style.backgroundPosition = '';
+    }
+  }
+
+  avatarWrapper.addEventListener('click', () => {
+    profileImageInput.click();
+  });
+
+  profileImageInput.addEventListener('change', (event) => {
+    const file = event.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const imageUrl = e.target.result;
+        
+        // Update main profile picture
+        avatarInnerSpan.style.backgroundImage = `url(${imageUrl})`;
+        avatarInnerSpan.style.backgroundSize = 'cover';
+        avatarInnerSpan.style.backgroundPosition = 'center';
+        avatarInnerSpan.textContent = '';
+        
+        // Update navigation profile overlay
+        updateNavigationProfile();
+        
+        // Save to localStorage
+        saveToLocalStorage();
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  // Notification badge functionality
+  function updateNotificationBadge(count) {
+    if (count > 0) {
+      if (notificationBadge) {
+        notificationBadge.textContent = count.toString();
+        notificationBadge.style.display = 'block';
+      } else {
+        // Create badge if it doesn't exist
+        const notificationButton = document.querySelector('.icon-button[aria-label="Notifications"]');
+        const newBadge = document.createElement('span');
+        newBadge.className = 'badge';
+        newBadge.textContent = count.toString();
+        notificationButton.appendChild(newBadge);
+      }
+    } else {
+      // Hide badge if count is 0
+      if (notificationBadge) {
+        notificationBadge.style.display = 'none';
+      }
+    }
+  }
+
+  // Navigation functionality
+  const homePage = document.getElementById('homePage');
+  const cardsPage = document.getElementById('cardsPage');
+  const mainPage = document.getElementById('mainPage');
+  const cryptoPage = document.getElementById('cryptoPage');
+
+  function showPage(pageId) {
+    // Hide all pages
+    document.querySelectorAll('.page').forEach(page => {
+      page.classList.remove('active');
+    });
+    
+    // Show selected page
+    document.getElementById(pageId).classList.add('active');
+    
+    // Update status bar color based on page
+    updateStatusBarForPage(pageId);
+  }
+
+  // Add click functionality to navbar - we'll detect clicks on the navbar image
+  const navbarImage = document.querySelector('.navbar-image');
+  navbarImage.addEventListener('click', (event) => {
+    const rect = navbarImage.getBoundingClientRect();
+    const clickX = event.clientX - rect.left;
+    const imageWidth = rect.width;
+    
+    // Calculate which section was clicked based on navbar layout
+    // Assuming 5 sections: Home, Cards, Pay/Request, Crypto, Me
+    const sectionWidth = imageWidth / 5;
+    const clickedSection = Math.floor(clickX / sectionWidth);
+    
+    switch (clickedSection) {
+      case 0: // Home
+        showPage('homePage');
+        break;
+      case 1: // Cards
+        showPage('cardsPage');
+        break;
+      case 2: // Pay/Request
+        showPage('comingSoonPage'); // Show coming soon page for Pay/Request
+        break;
+      case 3: // Crypto
+        showPage('cryptoPage');
+        break;
+      case 4: // Me
+        showPage('mainPage');
+        break;
+    }
+  });
+
+  // Crypto price data and live updates
+  const cryptoPrices = {
+    PYUSD: { price: 1.00, change: 0.00, basePrice: 1.00 },
+    BTC: { price: 122694.63, change: -1.35, basePrice: 122694.63 },
+    ETH: { price: 4491.18, change: -4.28, basePrice: 4491.18 },
+    SOL: { price: 221.70, change: -4.12, basePrice: 221.70 },
+    LINK: { price: 22.01, change: -3.12, basePrice: 22.01 },
+    LTC: { price: 116.72, change: -1.09, basePrice: 116.72 },
+    BCH: { price: 579.88, change: -2.54, basePrice: 579.88 }
+  };
+
+  function updateCryptoPrices() {
+    Object.keys(cryptoPrices).forEach(symbol => {
+      const data = cryptoPrices[symbol];
+      
+      // Simulate price fluctuation (±2% of base price)
+      const fluctuation = (Math.random() - 0.5) * 0.04; // ±2%
+      const newPrice = data.basePrice * (1 + fluctuation);
+      
+      // Calculate new change percentage
+      const newChange = ((newPrice - data.basePrice) / data.basePrice) * 100;
+      
+      data.price = newPrice;
+      data.change = newChange;
+      
+      // Update DOM elements
+      const cryptoItem = document.querySelector(`[data-symbol="${symbol}"]`);
+      if (cryptoItem) {
+        const priceEl = cryptoItem.querySelector('.crypto-price');
+        const changeEl = cryptoItem.querySelector('.crypto-change');
+        
+        // Format price based on value
+        let formattedPrice;
+        if (newPrice >= 1000) {
+          formattedPrice = '$' + newPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        } else if (newPrice >= 1) {
+          formattedPrice = '$' + newPrice.toFixed(2);
+        } else {
+          formattedPrice = '$' + newPrice.toFixed(4);
+        }
+        
+        priceEl.textContent = formattedPrice;
+        
+        // Format change percentage
+        const changeSign = newChange >= 0 ? '+' : '';
+        changeEl.textContent = `${changeSign} ${newChange.toFixed(2)}%`;
+        
+        // Update color class
+        changeEl.className = 'crypto-change ' + (newChange >= 0 ? 'positive' : 'negative');
+      }
+    });
+  }
+
+  // Update crypto prices every 3 seconds
+  setInterval(updateCryptoPrices, 3000);
+
+  // LocalStorage functionality
+  function saveToLocalStorage() {
+    try {
+      const data = {
+        displayName: displayNameEl.textContent.trim(),
+        username: usernameTextEl.textContent.trim(),
+        balance: parseFloat(balanceValueEl.textContent.replace(/[^0-9.]/g, '')) || 0,
+        cryptoBalance: parseFloat(cryptoBalanceEl.textContent.replace(/[^0-9.]/g, '')) || 0,
+        cardBalance: parseFloat(cardBalanceEl.textContent.replace(/[^0-9.]/g, '')) || 0,
+        cardDigits: cardNumberDisplay.textContent.replace('•••• ', '') || '1543',
+        notificationCount: notificationBadge ? parseInt(notificationBadge.textContent.trim()) || 0 : 0,
+        profileImage: avatarInnerSpan.style.backgroundImage || ''
+      };
+      localStorage.setItem('venmoProfileData', JSON.stringify(data));
+    } catch (e) {
+      console.log('LocalStorage not available:', e);
+    }
+  }
+
+  function loadFromLocalStorage() {
+    try {
+      const savedData = localStorage.getItem('venmoProfileData');
+      if (savedData) {
+        const data = JSON.parse(savedData);
+        
+        // Update display name and username
+        if (data.displayName) {
+          displayNameEl.textContent = data.displayName;
+          updateProfileInitials(data.displayName);
+        }
+        if (data.username) {
+          usernameTextEl.textContent = data.username;
+        }
+        
+        // Update balance
+        if (data.balance !== undefined) {
+          const formattedBalance = data.balance.toLocaleString(undefined, {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: data.balance % 1 === 0 ? 0 : 2,
+            maximumFractionDigits: 2
+          });
+          balanceValueEl.textContent = formattedBalance;
+        }
+        
+        // Update crypto balance
+        if (data.cryptoBalance !== undefined) {
+          const formattedCryptoBalance = data.cryptoBalance.toLocaleString(undefined, {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: data.cryptoBalance % 1 === 0 ? 0 : 2,
+            maximumFractionDigits: 2
+          });
+          cryptoBalanceEl.textContent = formattedCryptoBalance;
+        }
+        
+        // Update card balance
+        if (data.cardBalance !== undefined) {
+          const formattedCardBalance = data.cardBalance.toLocaleString(undefined, {
+            style: 'currency',
+            currency: 'USD',
+            minimumFractionDigits: data.cardBalance % 1 === 0 ? 0 : 2,
+            maximumFractionDigits: 2
+          });
+          cardBalanceEl.textContent = formattedCardBalance;
+        }
+        
+        // Update card last 4 digits
+        if (data.cardDigits) {
+          cardNumberDisplay.textContent = `•••• ${data.cardDigits}`;
+        }
+        
+        // Update notification badge
+        if (data.notificationCount !== undefined) {
+          updateNotificationBadge(data.notificationCount);
+        }
+        
+        // Update profile image
+        if (data.profileImage) {
+          avatarInnerSpan.style.backgroundImage = data.profileImage;
+          avatarInnerSpan.style.backgroundSize = 'cover';
+          avatarInnerSpan.style.backgroundPosition = 'center';
+          avatarInnerSpan.textContent = '';
+        }
+        
+        // Update navigation profile overlay
+        updateNavigationProfile();
+      }
+    } catch (e) {
+      console.log('Error loading from localStorage:', e);
+    }
+  }
+
+  // Initialize status bar color for the current page
+  updateStatusBarForPage('homePage');
+
+  // Load saved data on page load
+  loadFromLocalStorage();
+
+  // Initialize profile initials (in case no saved data)
+  if (!avatarInnerSpan.style.backgroundImage) {
+    updateProfileInitials(displayNameEl.textContent.trim());
+  }
+</script>
+</body>
+</html>
